@@ -41,11 +41,10 @@ using only open-source tools and datasets.
 
 ## 🏗️ System Architecture
 
-flowchart LR
-    A[Streamlit UI] --> B[FastAPI Backend]
-    B --> C[Vegetable Classifier]
-    B --> D[Recipe Filter and Ranker]
-    D --> E[Recipe Dataset JSON]
+The following diagram illustrates the end-to-end architecture of the AI Recipe Recommender system, including image-based vegetable detection, recipe filtering, and ranking.
+
+
+![System Architecture](docs/images/system_architecture.png)
 
 
 ---
@@ -60,26 +59,6 @@ flowchart LR
 - **PIL / OpenCV** – image handling
 
 All components are built using **open-source libraries**.
-
----
-
-## 📂 Project Structure
-
-flowchart TB
-    ROOT[ai-recipe-recommender]
-    ROOT --> backend
-    ROOT --> frontend
-    ROOT --> data_raw
-    ROOT --> README
-
-    backend --> api
-    backend --> services
-    backend --> ml
-    backend --> data
-    backend --> scripts
-
-    frontend --> streamlit_app
-
 
 ---
 
@@ -121,6 +100,7 @@ http://localhost:8501
 ---
 
 📝 Notes & Limitations
+
 This project is experimental and built for learning purposes
 Recipe images may not load for all recipes due to external website restrictions
 Dataset quality directly affects recipe accuracy
@@ -129,11 +109,13 @@ The ranking logic is heuristic-based (not ML-ranked)
 ---
 
 🤝 Contributions
+
 This is a learning-focused project.
 Feedback, suggestions, and improvements are welcome via issues or pull requests.
 
 ---
 
 📄 License
+
 This project uses publicly available datasets and open-source libraries.
 Refer to individual datasets for their respective licenses.
