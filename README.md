@@ -41,12 +41,12 @@ using only open-source tools and datasets.
 
 ## 🏗️ System Architecture
 
-```mermaid
 flowchart LR
     A[Streamlit UI] --> B[FastAPI Backend]
     B --> C[Vegetable Classifier]
-    B --> D[Recipe Filter & Ranker]
-    D --> E[Recipe Dataset (JSON)]
+    B --> D[Recipe Filter and Ranker]
+    D --> E[Recipe Dataset JSON]
+
 
 ---
 
@@ -72,13 +72,13 @@ flowchart TB
     ROOT --> data_raw
     ROOT --> README
 
-    backend --> api[api/]
-    backend --> services[services/]
-    backend --> ml[ml/]
-    backend --> data[data/]
-    backend --> scripts[scripts/]
+    backend --> api
+    backend --> services
+    backend --> ml
+    backend --> data
+    backend --> scripts
 
-    frontend --> ui[streamlit_app.py]
+    frontend --> streamlit_app
 
 
 ---
