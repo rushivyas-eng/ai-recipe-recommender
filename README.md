@@ -41,8 +41,12 @@ using only open-source tools and datasets.
 
 ## 🏗️ System Architecture
 
-
-
+```mermaid
+flowchart LR
+    A[Streamlit UI] --> B[FastAPI Backend]
+    B --> C[Vegetable Classifier]
+    B --> D[Recipe Filter & Ranker]
+    D --> E[Recipe Dataset (JSON)]
 
 ---
 
@@ -61,34 +65,33 @@ All components are built using **open-source libraries**.
 
 ## 📂 Project Structure
 
-ai-recipe-recommender/
-├── backend/
-│ ├── api/ # FastAPI routes
-│ ├── services/ # Filtering & ranking logic
-│ ├── ml/ # Vegetable classifier
-│ ├── data/ # Processed recipe JSON
-│ └── scripts/ # Dataset conversion scripts
-│
-├── frontend/
-│ └── streamlit_app.py # Streamlit UI
-│
-├── data_raw/ # Raw datasets (CSV / images)
-├── README.md
-└── .gitignore
+flowchart TB
+    ROOT[ai-recipe-recommender]
+    ROOT --> backend
+    ROOT --> frontend
+    ROOT --> data_raw
+    ROOT --> README
+
+    backend --> api[api/]
+    backend --> services[services/]
+    backend --> ml[ml/]
+    backend --> data[data/]
+    backend --> scripts[scripts/]
+
+    frontend --> ui[streamlit_app.py]
 
 
 ---
 
 ## ▶️ Running the Project Locally
 
-### 1️⃣ Clone the repository
+Step 1: Clone the Repository
 
-```bash
 git clone https://github.com/RVs-Operation-Learn/ai-recipe-recommender.git
 cd ai-recipe-recommender
 
 
-2️⃣ Create & activate virtual environment
+Step 2: Create and Activate Virtual Environment
 python -m venv .venv
 
 Windows:
@@ -98,23 +101,24 @@ Linux / macOS
 source .venv/bin/activate
 
 
-3️⃣ Install dependencies
+Step 3: Install Dependencies
 pip install -r requirements.txt
 
 
-4️⃣ Start the backend (FastAPI)
+Step 4: Start the Backend (FastAPI)
 python run.py
 
 Backend runs at: 
 http://127.0.0.1:8000
 
 
-5️⃣ Start the frontend (Streamlit)
+Step 5: Start the Frontend (Streamlit)
 streamlit run frontend/streamlit_app.py
 
 Frontend runs at:
 http://localhost:8501
 
+---
 
 📝 Notes & Limitations
 This project is experimental and built for learning purposes
@@ -122,9 +126,13 @@ Recipe images may not load for all recipes due to external website restrictions
 Dataset quality directly affects recipe accuracy
 The ranking logic is heuristic-based (not ML-ranked)
 
+---
+
 🤝 Contributions
 This is a learning-focused project.
 Feedback, suggestions, and improvements are welcome via issues or pull requests.
+
+---
 
 📄 License
 This project uses publicly available datasets and open-source libraries.
