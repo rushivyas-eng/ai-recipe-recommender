@@ -66,7 +66,7 @@ All components are built using **open-source libraries**.
 
 Step 1: Clone the Repository
 
-git clone https://github.com/RVs-Operation-Learn/ai-recipe-recommender.git
+git clone https://github.com/rushivyas-eng/ai-recipe-recommender.git
 cd ai-recipe-recommender
 
 
