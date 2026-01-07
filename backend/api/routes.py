@@ -120,7 +120,8 @@ async def recommend_from_image(
         "detected_vegetables": detected,
         "count": len(results),
         "recipes": results["recipes"],
-        "suggested_additions": results["suggested_additions"]
+        "suggested_additions": results["suggested_additions"],
+        "shopping_list": results["shopping_list"]
     }
 
 

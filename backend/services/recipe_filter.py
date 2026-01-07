@@ -195,6 +195,29 @@ def filter_and_rank_recipes(
             elif rt <= cooking_time + 15:
                 score += 0.5
 
+        # --------------------------------
+        # EXPLANATION (WHY THIS RECIPE)
+        # --------------------------------
+        explanation = []
+
+        if matched:
+            explanation.append(
+                f"You already have {', '.join(sorted(matched))}"
+        )
+
+        if missing_ingredients:
+            explanation.append(
+                f"Only {len(missing_ingredients)} more ingredients needed"
+        )
+
+        if cuisine:
+            explanation.append("Matches your selected cuisine")
+
+        if cooking_time and recipe.get("cooking_time"):
+            if recipe["cooking_time"] <= cooking_time:
+                explanation.append("Fits within your cooking time")
+
+
         # -----------------------------
         # COLLECT RESULT
         # -----------------------------
@@ -206,6 +229,7 @@ def filter_and_rank_recipes(
             "missing_ingredients": missing_ingredients,
             "required_ingredients": sorted(list(required_ingredients)),
             "coverage_percent": coverage_percent,
+            "explanation": explanation,
             "cuisine": recipe.get("cuisine"),
             "meal": recipe.get("meal"),
             "cooking_time": recipe.get("cooking_time"),
@@ -235,8 +259,20 @@ def filter_and_rank_recipes(
         ing for ing, _ in missing_counter.most_common(3)
     ]
 
+    # --------------------------------
+    # SHOPPING LIST (AGGREGATED)
+    # --------------------------------
+    shopping_set = set()
+
+    for recipe in ranked[:5]:  # top 5 recipes
+        for ing in recipe.get("missing_ingredients", []):
+            shopping_set.add(ing)
+
+    shopping_list = sorted(list(shopping_set))
+
     return {
         "recipes": ranked[:top_k],
-        "suggested_additions": suggested_additions
+        "suggested_additions": suggested_additions,
+        "shopping_list": shopping_list
     }
 
