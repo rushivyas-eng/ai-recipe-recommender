@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+from datetime import date
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -20,6 +21,11 @@ if "selected_recipe_ids" not in st.session_state:
 
 if "recipe_missing_map" not in st.session_state:
     st.session_state.recipe_missing_map = {}
+
+# --- MEAL PLANNER (ISOLATED) ---
+if "meal_plan" not in st.session_state:
+    # { date_str: { meal: [recipe_name] } }
+    st.session_state.meal_plan = {}
 
 @st.cache_data
 def fetch_cuisines():
@@ -129,22 +135,13 @@ if result:
     # SUGGEST VEGETABLES TO UNLOCK MORE
     # ----------------------------------
     missing_counter = {}
-
-    for recipe in recipes[:5]:  # top 5 recipes only
+    for recipe in recipes[:5]:
         for ing in recipe.get("missing_ingredients", []):
             missing_counter[ing] = missing_counter.get(ing, 0) + 1
 
-    suggested = sorted(
-        missing_counter.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )[:3]
-
+    suggested = sorted(missing_counter.items(), key=lambda x: x[1], reverse=True)[:3]
     if suggested:
-        suggested_names = [name for name, _ in suggested]
-        st.info(
-            f"💡 Add {', '.join(suggested_names)} to unlock more recipes"
-        )
+        st.info(f"💡 Add {', '.join([x[0] for x in suggested])} to unlock more recipes")
 
     st.header(f"🍽️ Recommended Recipes ({len(recipes)})")
 
@@ -155,45 +152,32 @@ if result:
         missing = recipe.get("missing_ingredients", [])
         matched = recipe.get("matched_vegetables", [])
 
-        # Persist missing ingredients per recipe (NO LOGIC CHANGE)
         st.session_state.recipe_missing_map[recipe_id] = set(missing)
 
         total_time = (
             recipe.get("cooking_time")
             or recipe.get("meta", {}).get("total_time")
-            or recipe.get("meta", {}).get("TotalTimeInMins")
             or "N/A"
         )
 
-        # -------------------------------
-        # RECIPE CARD (UI POLISH)
-        # -------------------------------
         with st.container(border=True):
-
-            # Header row: title + checkbox
             col1, col2 = st.columns([4, 1])
             with col1:
                 st.markdown(f"## {recipe_name}")
             with col2:
                 checked = recipe_id in st.session_state.selected_recipe_ids
-                if st.checkbox(
-                    "Add",
-                    value=checked,
-                    key=f"select_{recipe_id}"
-                ):
+                if st.checkbox("Add", value=checked, key=f"select_{recipe_id}"):
                     st.session_state.selected_recipe_ids.add(recipe_id)
                 else:
                     st.session_state.selected_recipe_ids.discard(recipe_id)
 
-            st.caption(f"⏱️ Total Time: {total_time} mins | 🍽️ Cuisine: {recipe.get('cuisine')}")
+            st.caption(f"⏱️ {total_time} mins | 🍽️ {recipe.get('cuisine')}")
 
             if matched:
                 st.success(f"✅ You have: {', '.join(matched)}")
-
             if missing:
                 st.warning(f"⚠️ You’ll also need: {', '.join(missing)}")
 
-            st.markdown("**📊 Ingredient coverage**")
             st.progress(recipe.get("coverage_percent", 0) / 100)
             st.caption(f"{recipe.get('coverage_percent', 0)}% ingredients available")
 
@@ -211,24 +195,56 @@ if result:
             if recipe.get("meta", {}).get("recipe_url"):
                 st.link_button("🔗 Open Full Recipe", recipe["meta"]["recipe_url"])
 
+            # -------------------------------
+            # MEAL PLANNER (REPLACE LOGIC)
+            # -------------------------------
+            st.markdown("### 🍱 Add to Meal Plan")
+
+            plan_date = st.date_input("Date", value=date.today(), key=f"date_{recipe_id}")
+            plan_meal = st.selectbox("Meal", ["breakfast", "lunch", "dinner"], key=f"meal_{recipe_id}")
+
+            if st.button("➕ Add to Meal Plan", key=f"add_plan_{recipe_id}"):
+                d = str(plan_date)
+                st.session_state.meal_plan.setdefault(
+                    d, {"breakfast": [], "lunch": [], "dinner": []}
+                )
+                # ✅ REPLACE existing meal entry
+                st.session_state.meal_plan[d][plan_meal] = [recipe_name]
+                st.success("Meal updated")
+                st.rerun()
+
     # -------------------------------
-    # SHOPPING LIST (UI POLISH ONLY)
+    # SHOPPING LIST
     # -------------------------------
     if st.session_state.selected_recipe_ids:
-        shopping_items = set()
-
-        for rid in st.session_state.selected_recipe_ids:
-            shopping_items |= st.session_state.recipe_missing_map.get(rid, set())
-
         st.divider()
         st.header("🛒 Shopping List")
-        st.caption(
-            "Based on the recipes you selected above. "
-            "Uncheck items as you buy them."
-        )
-
+        shopping_items = set()
+        for rid in st.session_state.selected_recipe_ids:
+            shopping_items |= st.session_state.recipe_missing_map.get(rid, set())
         for item in sorted(shopping_items):
             st.checkbox(item, key=f"shop_{item}")
+
+    # -------------------------------
+    # MEAL PLANNER PANEL
+    # -------------------------------
+    st.divider()
+    st.header("📅 Meal Planner")
+
+    if not st.session_state.meal_plan:
+        st.info("No meals planned yet.")
     else:
-        st.divider()
-        st.info("Select one or more recipes above to generate a shopping list.")
+        for d, meals in sorted(st.session_state.meal_plan.items()):
+            st.subheader(d)
+            for m, items in meals.items():
+                if items:
+                    st.markdown(f"**{m.title()}**")
+                    for r in items:
+                        if st.button(f"❌ Remove {r}", key=f"rm_{d}_{m}_{r}"):
+                            st.session_state.meal_plan[d][m] = []
+                            st.rerun()
+
+    if st.button("🧹 Clear Meal Plan"):
+        st.session_state.meal_plan = {}
+        st.success("Meal plan cleared")
+        st.rerun()
