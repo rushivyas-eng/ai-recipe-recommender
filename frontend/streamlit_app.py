@@ -21,6 +21,14 @@ if "selected_recipe_ids" not in st.session_state:
 if "recipe_missing_map" not in st.session_state:
     st.session_state.recipe_missing_map = {}
 
+@st.cache_data
+def fetch_cuisines():
+    resp = requests.get(f"{API_URL}/metadata/cuisines")
+    resp.raise_for_status()
+    return resp.json()["cuisines"]
+
+cuisine_options = fetch_cuisines()
+
 # -------------------------------
 # API CALL
 # -------------------------------
@@ -66,8 +74,9 @@ uploaded_file = st.sidebar.file_uploader(
 
 cuisine = st.sidebar.selectbox(
     "Cuisine style",
-    ["north_indian", "south_indian", "gujarati", "andhra", "italian", "mexican", "asian"]
-)
+    options=cuisine_options,
+    format_func=lambda x: x["label"]
+)["value"]
 
 diet = st.sidebar.radio("Diet", ["veg", "non-veg"])
 meal = st.sidebar.selectbox("Meal", ["breakfast", "lunch", "dinner"])
@@ -115,6 +124,28 @@ if result:
     recipes = result.get("recipes", [])
 
     st.success(f"🥕 Detected vegetables: {', '.join(detected) if detected else 'None'}")
+
+    # ----------------------------------
+    # SUGGEST VEGETABLES TO UNLOCK MORE
+    # ----------------------------------
+    missing_counter = {}
+
+    for recipe in recipes[:5]:  # top 5 recipes only
+        for ing in recipe.get("missing_ingredients", []):
+            missing_counter[ing] = missing_counter.get(ing, 0) + 1
+
+    suggested = sorted(
+        missing_counter.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:3]
+
+    if suggested:
+        suggested_names = [name for name, _ in suggested]
+        st.info(
+            f"💡 Add {', '.join(suggested_names)} to unlock more recipes"
+        )
+
     st.header(f"🍽️ Recommended Recipes ({len(recipes)})")
 
     for recipe in recipes:
