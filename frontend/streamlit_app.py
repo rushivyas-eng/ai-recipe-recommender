@@ -239,11 +239,11 @@ if result:
                 st.rerun()
 
     # -------------------------------
-    # SHOPPING LIST (UNCHANGED)
+    # SHOPPING LIST (SELECTED RECIPES)
     # -------------------------------
     if st.session_state.selected_recipe_ids:
         st.divider()
-        st.header("🛒 Shopping List")
+        st.header("🛒 Shopping List (Selected Recipes)")
         shopping_items = set()
         for rid in st.session_state.selected_recipe_ids:
             shopping_items |= st.session_state.recipe_missing_map.get(rid, set())
@@ -273,3 +273,27 @@ if result:
         st.session_state.meal_plan = {}
         st.success("Meal plan cleared")
         st.rerun()
+
+    # ======================================================
+    # 🗓️ SHOPPING LIST (MEAL PLAN)  <-- NEW SECTION
+    # ======================================================
+    st.divider()
+    st.header("🗓️ Shopping List (Meal Plan)")
+    st.caption("Ingredients required for meals you planned above")
+
+    meal_plan_items = set()
+
+    for meals in st.session_state.meal_plan.values():
+        for recipe_name in meals.values():
+            # find recipe by name in current results
+            for recipe in recipes:
+                if recipe["name"] == recipe_name:
+                    meal_plan_items |= set(
+                        recipe.get("missing_ingredients", [])
+                    )
+
+    if meal_plan_items:
+        for item in sorted(meal_plan_items):
+            st.checkbox(item, key=f"meal_plan_shop_{item}")
+    else:
+        st.info("No ingredients needed yet. Plan some meals to generate this list.")
