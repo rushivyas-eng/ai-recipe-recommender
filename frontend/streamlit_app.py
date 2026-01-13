@@ -24,7 +24,7 @@ if "recipe_missing_map" not in st.session_state:
 
 # --- MEAL PLANNER (ISOLATED) ---
 if "meal_plan" not in st.session_state:
-    # { date_str: { meal: [recipe_name] } }
+    # { date_str: { meal: recipe_name } }
     st.session_state.meal_plan = {}
 
 @st.cache_data
@@ -196,25 +196,50 @@ if result:
                 st.link_button("🔗 Open Full Recipe", recipe["meta"]["recipe_url"])
 
             # -------------------------------
-            # MEAL PLANNER (REPLACE LOGIC)
+            # MEAL PLANNER (Option A + B)
             # -------------------------------
             st.markdown("### 🍱 Add to Meal Plan")
 
-            plan_date = st.date_input("Date", value=date.today(), key=f"date_{recipe_id}")
-            plan_meal = st.selectbox("Meal", ["breakfast", "lunch", "dinner"], key=f"meal_{recipe_id}")
+            plan_date = st.date_input(
+                "Date",
+                value=date.today(),
+                key=f"date_{recipe_id}"
+            )
+            plan_meal = st.selectbox(
+                "Meal",
+                ["breakfast", "lunch", "dinner"],
+                key=f"meal_{recipe_id}"
+            )
 
-            if st.button("➕ Add to Meal Plan", key=f"add_plan_{recipe_id}"):
-                d = str(plan_date)
-                st.session_state.meal_plan.setdefault(
-                    d, {"breakfast": [], "lunch": [], "dinner": []}
-                )
-                # ✅ REPLACE existing meal entry
-                st.session_state.meal_plan[d][plan_meal] = [recipe_name]
-                st.success("Meal updated")
+            d = str(plan_date)
+            existing_recipe = (
+                st.session_state.meal_plan.get(d, {}).get(plan_meal)
+            )
+
+            if existing_recipe == recipe_name:
+                st.info("📅 Already planned for this meal")
+
+            button_label = (
+                "🔁 Replace in Meal Plan" if existing_recipe else "➕ Add to Meal Plan"
+            )
+
+            if st.button(button_label, key=f"add_plan_{recipe_id}"):
+                st.session_state.meal_plan.setdefault(d, {})
+                if existing_recipe:
+                    st.warning(
+                        f"⚠️ {plan_meal.title()} already had **{existing_recipe}**. "
+                        f"Replaced with **{recipe_name}**."
+                    )
+                else:
+                    st.success(
+                        f"Added **{recipe_name}** to {plan_meal} on {plan_date}"
+                    )
+
+                st.session_state.meal_plan[d][plan_meal] = recipe_name
                 st.rerun()
 
     # -------------------------------
-    # SHOPPING LIST
+    # SHOPPING LIST (UNCHANGED)
     # -------------------------------
     if st.session_state.selected_recipe_ids:
         st.divider()
@@ -236,13 +261,13 @@ if result:
     else:
         for d, meals in sorted(st.session_state.meal_plan.items()):
             st.subheader(d)
-            for m, items in meals.items():
-                if items:
-                    st.markdown(f"**{m.title()}**")
-                    for r in items:
-                        if st.button(f"❌ Remove {r}", key=f"rm_{d}_{m}_{r}"):
-                            st.session_state.meal_plan[d][m] = []
-                            st.rerun()
+            for m, r in meals.items():
+                st.markdown(f"**{m.title()}**: {r}")
+                if st.button(f"❌ Remove {r}", key=f"rm_{d}_{m}_{r}"):
+                    del st.session_state.meal_plan[d][m]
+                    if not st.session_state.meal_plan[d]:
+                        del st.session_state.meal_plan[d]
+                    st.rerun()
 
     if st.button("🧹 Clear Meal Plan"):
         st.session_state.meal_plan = {}
