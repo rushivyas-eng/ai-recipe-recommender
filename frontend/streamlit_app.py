@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from datetime import date
+from datetime import date, timedelta
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -225,16 +225,6 @@ if result:
 
             if st.button(button_label, key=f"add_plan_{recipe_id}"):
                 st.session_state.meal_plan.setdefault(d, {})
-                if existing_recipe:
-                    st.warning(
-                        f"⚠️ {plan_meal.title()} already had **{existing_recipe}**. "
-                        f"Replaced with **{recipe_name}**."
-                    )
-                else:
-                    st.success(
-                        f"Added **{recipe_name}** to {plan_meal} on {plan_date}"
-                    )
-
                 st.session_state.meal_plan[d][plan_meal] = recipe_name
                 st.rerun()
 
@@ -275,7 +265,27 @@ if result:
         st.rerun()
 
     # ======================================================
-    # 🗓️ SHOPPING LIST (MEAL PLAN)  <-- NEW SECTION
+    # 🆕 WEEKLY MEAL OVERVIEW (READ-ONLY)
+    # ======================================================
+    st.divider()
+    st.header("📆 Weekly Meal Overview")
+    st.caption("Read-only view of your meal plan for the current week")
+
+    today = date.today()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
+
+    for i in range(7):
+        current_day = start_of_week + timedelta(days=i)
+        day_key = str(current_day)
+        meals = st.session_state.meal_plan.get(day_key, {})
+
+        with st.expander(current_day.strftime("%A, %d %b")):
+            st.write(f"🥣 **Breakfast**: {meals.get('breakfast', '—')}")
+            st.write(f"🍛 **Lunch**: {meals.get('lunch', '—')}")
+            st.write(f"🌙 **Dinner**: {meals.get('dinner', '—')}")
+
+    # ======================================================
+    # 🗓️ SHOPPING LIST (MEAL PLAN)
     # ======================================================
     st.divider()
     st.header("🗓️ Shopping List (Meal Plan)")
@@ -285,7 +295,6 @@ if result:
 
     for meals in st.session_state.meal_plan.values():
         for recipe_name in meals.values():
-            # find recipe by name in current results
             for recipe in recipes:
                 if recipe["name"] == recipe_name:
                     meal_plan_items |= set(
